@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>ฟูมากคำนวนแชร์</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 20px; }
+    input { margin: 5px; padding: 5px; }
+    .person-input { margin-bottom: 10px; }
+    .result { margin-top: 20px; padding: 10px; border-top: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h2>ฟูมากคำนวนแชร์</h2>
+
+  <label>จำนวนคน: <input type="number" id="personCount" min="2" value="2"></label>
+  <button onclick="generateInputs()">กรอกชื่อและจำนวนเงิน</button>
+
+  <div id="personInputs"></div>
+
+  <button onclick="calculate()">คำนวณ</button>
+
+  <div class="result" id="result"></div>
+
+  <script>
+    function generateInputs() {
+      const count = parseInt(document.getElementById('personCount').value);
+      const container = document.getElementById('personInputs');
+      container.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        container.innerHTML += `
+          <div class="person-input">
+            <input type="text" placeholder="ชื่อคนที่ ${i + 1}" id="name${i}" required>
+            <input type="number" placeholder="จำนวนเงินที่จ่าย" id="paid${i}" required>
+          </div>`;
+      }
+    }
+
+    function calculate() {
+      const count = parseInt(document.getElementById('personCount').value);
+      const people = [];
+
+      let total = 0;
+      for (let i = 0; i < count; i++) {
+        const name = document.getElementById(`name${i}`).value || `คนที่ ${i + 1}`;
+        const paid = parseFloat(document.getElementById(`paid${i}`).value) || 0;
+        total += paid;
+        people.push({ name, paid, delta: 0 });
+      }
+
+      const avg = total / count;
+      people.forEach(p => p.delta = +(p.paid - avg).toFixed(2));
+
+      const payers = people.filter(p => p.delta < 0);
+      const receivers = people.filter(p => p.delta > 0);
+
+      let transfers = [];
+
+      for (let payer of payers) {
+        for (let receiver of receivers) {
+          if (payer.delta === 0) break;
+          if (receiver.delta === 0) continue;
+
+          const amount = Math.min(-payer.delta, receiver.delta);
+          transfers.push({
+            from: payer.name,
+            to: receiver.name,
+            amount: amount.toFixed(2)
+          });
+
+          payer.delta += amount;
+          receiver.delta -= amount;
+        }
+      }
+
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = `<h3>ผลการคำนวณ</h3>
+        <p>รวมทั้งหมด: ${total.toFixed(2)} บาท | หารเฉลี่ยคนละ: ${avg.toFixed(2)} บาท</p>`;
+
+      if (transfers.length === 0) {
+        resultDiv.innerHTML += `<p>ทุกคนจ่ายเท่ากันแล้ว 🎉</p>`;
+      } else {
+        resultDiv.innerHTML += `<ul>${transfers.map(t =>
+          `<li><b>${t.from}</b> โอนให้ <b>${t.to}</b> = <b>${t.amount} บาท</b></li>`
+        ).join('')}</ul>`;
+      }
+    }
+  </script>
+</body>
+</html>
